@@ -1,0 +1,394 @@
+# Prompt Ringkas: GitHub Repository Explorer Website
+
+## 🎯 Project Overview
+Website minimalist modern untuk eksplorasi GitHub repositories dengan fitur dan ui/ux yang mirip lengkap seperti GitHub.com. Fetch data via GitHub API, tampilkan file structure, render markdown, dan info repository lengkap.
+UI/UX harus lengkap namun buat perbedaan cara designnya semua harus diimplementasikan langsung semya perintah dibawah ini, struktur dibawah ini, semua fitur dibawah ini lengkap tidak ada yang tertinggal satupun!.
+
+## 🚀 Core Features
+1.landing Page
+### 2.. Repository List Page
+**Features:**
+- Search & filter repositories
+- Sort by stars/forks/updated
+- Category tags
+- Pagination
+
+**Card Display:**
+```
+owner/repo-name          ⭐ 1.2k
+Description here...
+JavaScript • MIT • Updated 2d ago
+#react #ui #components
+```
+
+---
+
+### 2. Repository Detail Page (`/repo/:owner/:name`)
+
+**Sections:**
+
+#### A. Header
+```
+[Avatar] owner/repo-name
+Description
+⭐ Stars | 🍴 Forks | 👁 Watch | 📝 License
+🏷️ Topics
+```
+
+#### B. Tabs
+```
+[ Code ] [ Commits ] [ Issues ] [ Pull Requests ] [ License ]
+```
+
+#### C. File Explorer
+```
+Branch: [main ▼]  [Clone] [Download]
+─────────────────────────────────────
+📁 src/
+📁 public/
+📄 README.md
+📄 package.json
+📄 LICENSE
+```
+
+#### D. File Viewer (Click file)
+```
+Modal/Drawer showing:
+- Raw file content
+- Markdown rendering (for .md)
+- Syntax highlighting (for code)
+- Image preview (for images)
+- Download button
+```
+
+#### E. README Auto-display
+Below file explorer, auto-render README.md
+
+#### F. Sidebar
+```
+About:
+- Description
+- Topics
+- Stats (stars/forks/watch)
+- Languages bar
+- License
+- Contributors
+```
+
+---
+
+## 🔌 GitHub API Endpoints
+
+```javascript
+// Core APIs
+GET /repos/:owner/:repo                    // Repo info
+GET /repos/:owner/:repo/contents/:path     // Files/folders
+GET /repos/:owner/:repo/readme             // README
+GET /repos/:owner/:repo/commits            // Commits
+GET /repos/:owner/:repo/languages          // Languages
+GET /repos/:owner/:repo/license            // License
+GET /repos/:owner/:repo/contributors       // Contributors
+GET /repos/:owner/:repo/issues             // Issues
+GET /repos/:owner/:repo/pulls              // Pull requests
+GET /search/repositories?q=...             // Search
+
+// Decode base64 content
+const content = atob(data.content);
+```
+
+---
+
+## 💻 Tech Stack
+
+```
+React + TypeScript
+React Router v6
+Tailwind CSS
+Lucide React (icons)
+Axios (API)
+react-markdown + remark-gfm
+react-syntax-highlighter
+```
+
+---
+
+## 📁 Project Structure
+
+```
+src/
+├── components/
+│   ├── RepoCard.tsx
+│   ├── RepoHeader.tsx
+│   ├── FileExplorer.tsx
+│   ├── FileViewer.tsx
+│   ├── MarkdownRenderer.tsx
+│   ├── CommitList.tsx
+│   └── RepoSidebar.tsx
+├── pages/
+│   ├── HomePage.tsx
+│   └── RepoDetailPage.tsx
+├── services/
+│   └── githubApi.ts
+├── hooks/
+│   ├── useRepository.ts
+│   └── useFileContent.ts
+├── utils/
+│   ├── formatters.ts
+│   └── fileIcons.ts
+└── App.tsx
+```
+
+---
+
+## 🎨 Key Components
+
+### FileExplorer
+```tsx
+- Breadcrumb navigation
+- List folders first (sorted)
+- List files second (sorted)
+- Click folder → navigate into
+- Click file → open FileViewer
+- File icons by extension
+- File size display
+```
+
+### FileViewer (Modal)
+```tsx
+- Show file name + path
+- Raw/Download buttons
+- Content based on type:
+  * .md → MarkdownRenderer
+  * code → Syntax highlight
+  * image → img preview
+  * other → plain text
+```
+
+### MarkdownRenderer
+```tsx
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+
+Features:
+- GitHub Flavored Markdown
+- Syntax highlighting in code blocks
+- Tables, checkboxes, strikethrough
+- Auto-link URLs
+- Image rendering
+```
+
+### CommitList
+```tsx
+Display per commit:
+- Avatar
+- Commit message (first line)
+- Author name
+- Relative time
+- Short SHA (7 chars)
+```
+
+---
+
+## 🔧 API Service Example
+
+```typescript
+// githubApi.ts
+const API = 'https://api.github.com';
+
+export const githubApi = {
+  async getRepository(owner, repo) {
+    const res = await fetch(`${API}/repos/${owner}/${repo}`);
+    return res.json();
+  },
+  
+  async getContents(owner, repo, path = '') {
+    const res = await fetch(`${API}/repos/${owner}/${repo}/contents/${path}`);
+    return res.json();
+  },
+  
+  async getFileContent(owner, repo, path) {
+    const res = await fetch(`${API}/repos/${owner}/${repo}/contents/${path}`);
+    const data = await res.json();
+    return { ...data, decodedContent: atob(data.content) };
+  },
+  
+  async getReadme(owner, repo) {
+    const res = await fetch(`${API}/repos/${owner}/${repo}/readme`);
+    const data = await res.json();
+    return { ...data, decodedContent: atob(data.content) };
+  },
+  
+  async getCommits(owner, repo, page = 1) {
+    const res = await fetch(`${API}/repos/${owner}/${repo}/commits?page=${page}`);
+    return res.json();
+  }
+};
+```
+
+---
+
+## 🛠️ Utility Functions
+
+```typescript
+// formatters.ts
+export const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+};
+
+export const formatRelativeTime = (date) => {
+  const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+  const intervals = {
+    year: 31536000, month: 2592000, week: 604800,
+    day: 86400, hour: 3600, minute: 60
+  };
+  
+  for (const [unit, sec] of Object.entries(intervals)) {
+    const interval = Math.floor(seconds / sec);
+    if (interval >= 1) return `${interval} ${unit}${interval > 1 ? 's' : ''} ago`;
+  }
+  return 'just now';
+};
+
+// fileIcons.ts
+export const getFileIcon = (name, type) => {
+  if (type === 'dir') return '📁';
+  const ext = name.split('.').pop()?.toLowerCase();
+  const icons = {
+    md: '📝', js: '📜', jsx: '⚛️', ts: '📘', tsx: '⚛️',
+    py: '🐍', html: '🌐', css: '🎨', json: '⚙️',
+    png: '🖼️', jpg: '🖼️', svg: '🎨', pdf: '📕'
+  };
+  return icons[ext] || '📄';
+};
+```
+
+---
+
+## 🎯 Custom Hooks
+
+```typescript
+// useRepository.ts
+export const useRepository = (owner, repo) => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  useEffect(() => {
+    Promise.all([
+      githubApi.getRepository(owner, repo),
+      githubApi.getLanguages(owner, repo)
+    ])
+    .then(([repoData, languages]) => 
+      setData({ ...repoData, languages })
+    )
+    .catch(err => setError(err.message))
+    .finally(() => setLoading(false));
+  }, [owner, repo]);
+  
+  return { data, loading, error };
+};
+
+// useFileContent.ts
+export const useFileContent = (owner, repo, path) => {
+  const [content, setContent] = useState('');
+  const [loading, setLoading] = useState(false);
+  
+  useEffect(() => {
+    if (!path) return;
+    setLoading(true);
+    githubApi.getFileContent(owner, repo, path)
+      .then(data => setContent(data.decodedContent))
+      .finally(() => setLoading(false));
+  }, [owner, repo, path]);
+  
+  return { content, loading };
+};
+```
+
+---
+
+## 🎨 UI Design (Minimalist)
+
+**Principles:**
+- Clean white backgrounds
+- Subtle shadows (0-4px blur)
+- Single accent color (e.g., blue #3B82F6)
+- System fonts (Inter, SF Pro)
+- 8px spacing scale
+- Smooth transitions (300ms)
+- No decorative elements
+
+**Components:**
+- Cards: `bg-white border border-gray-200 rounded-lg shadow-sm`
+- Buttons: `px-4 py-2 rounded-lg hover:bg-gray-50 transition`
+- Text: `text-gray-900` (headings), `text-gray-600` (body)
+- Icons: 20px size, gray-500 color
+
+---
+
+## 📱 Responsive
+
+```
+Mobile (< 768px):
+- Single column
+- Bottom sheet for file viewer
+- Touch-friendly (44px buttons)
+
+Desktop (> 768px):
+- Sidebar layout (75% main + 25% sidebar)
+- Modal for file viewer
+- Hover states
+```
+
+---
+
+## ⚡ Additional Features
+
+1. **Clone URL Copy**: Copy button with "Copied!" feedback
+2. **Branch Selector**: Dropdown to switch branches
+3. **Download Repo**: Direct download link
+4. **Search**: Search files in current directory
+5. **Breadcrumbs**: Path navigation
+6. **Language Bar**: Visual % of languages used
+7. **Loading States**: Skeleton screens
+8. **Error Handling**: Friendly error messages
+9. **Rate Limit**: Show API rate limit status
+10. **Dark Mode**: Optional toggle
+
+---
+
+## 🚀 Implementation Steps
+
+1. Setup React + Tailwind + Router
+2. Create `githubApi.ts` service
+3. Build `HomePage` with repo list
+4. Build `RepoDetailPage` layout
+5. Implement `FileExplorer` + navigation
+6. Add `FileViewer` modal
+7. Integrate `MarkdownRenderer`
+8. Add `CommitList` + other tabs
+9. Style with Tailwind (minimalist)
+10. Test + Deploy to Vercel
+
+
+## ✅ Success Criteria
+
+- ✅ Fetch & display repository data
+- ✅ Navigate folder structure
+- ✅ View file contents
+- ✅ Render markdown beautifully
+- ✅ Syntax highlight code
+- ✅ Show commits, issues, PRs
+- ✅ Display license & contributors
+- ✅ Responsive design
+- ✅ Fast loading (<3s)
+- ✅ Clean, minimalist UI
+
+---
+
+**Result**: GitHub-like repository explorer dengan UI minimalist modern, fetch lengkap via GitHub API, support markdown rendering, file navigation, dan semua fitur detail repository! 🚀
